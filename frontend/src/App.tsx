@@ -7,10 +7,12 @@ import ProtectedRoute from './components/shared/ProtectedRoute'
 import LandingPage from './pages/Landing/index'
 import Login from './pages/Auth/Login'
 
-// Client pages (lazy loaded)
+// Lazy pages
 import { lazy, Suspense } from 'react'
 import Spinner from './components/ui/Spinner'
 
+const Register = lazy(() => import('./pages/Auth/Register'))
+const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'))
 const ClientLayout = lazy(() => import('./components/layout/ClientLayout'))
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout'))
 const ClientDashboard = lazy(() => import('./pages/Client/Dashboard'))
@@ -42,6 +44,8 @@ export default function App() {
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Client */}
             <Route element={<ProtectedRoute role="CLIENT" />}>

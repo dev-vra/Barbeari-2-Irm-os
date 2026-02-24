@@ -18,6 +18,7 @@ interface AuthState {
   login: (identifier: string, password: string) => Promise<void>
   logout: () => Promise<void>
   setTokens: (access: string, refresh: string) => void
+  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -45,6 +46,10 @@ export const useAuthStore = create<AuthState>()(
 
       setTokens: (accessToken: string, refreshToken: string) => {
         set({ accessToken, refreshToken })
+      },
+
+      setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => {
+        set({ user, accessToken, refreshToken, isAuthenticated: true })
       },
     }),
     {

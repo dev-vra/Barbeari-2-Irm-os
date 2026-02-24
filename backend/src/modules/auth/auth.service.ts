@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { isCpfIdentifier } from '../../common/utils/cpf.util';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -53,6 +55,83 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken: refreshTokenValue, user };
+  }
+
+  async register(dto: RegisterDto) {
+    const cpfClean = dto.cpf.replace(/\D/g, '');
+
+    const emailExists = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+    if (emailExists) throw new ConflictException('E-mail já cadastrado');
+
+    const cpfExists = await this.prisma.user.findUnique({
+      where: { cpf: cpfClean },
+    });
+    if (cpfExists) throw new ConflictException('CPF já cadastrado');
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email.toLowerCase(),
+        cpf: cpfClean,
+        passwordHash,
+        phone: dto.phone,
+        birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
+        role: 'CLIENT',
+      },
+    });
+
+    const { passwordHash: _, ...safeUser } = user;
+    return this.login(safeUser);
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const cpfClean = dto.cpf.replace(/\D/g, '');
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: dto.email.toLowerCase(),
+        cpf: cpfClean,
+        isActive: true,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Dados não conferem. Verifique e-mail, CPF e data de nascimento.');
+    }
+
+    // Validate birthdate
+    if (!user.birthdate) {
+      throw new BadRequestException('Não há data de nascimento cadastrada para esta conta. Entre em contato com a barbearia.');
+    }
+
+    const provided = new Date(dto.birthdate);
+    const stored = new Date(user.birthdate);
+
+    const sameDate =
+      provided.getUTCFullYear() === stored.getUTCFullYear() &&
+      provided.getUTCMonth() === stored.getUTCMonth() &&
+      provided.getUTCDate() === stored.getUTCDate();
+
+    if (!sameDate) {
+      throw new BadRequestException('Dados não conferem. Verifique e-mail, CPF e data de nascimento.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+      // Revoke all existing refresh tokens for security
+      this.prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
+    ]);
+
+    return { message: 'Senha redefinida com sucesso. Faça login com a nova senha.' };
   }
 
   async refreshTokens(userId: string, refreshToken: string) {

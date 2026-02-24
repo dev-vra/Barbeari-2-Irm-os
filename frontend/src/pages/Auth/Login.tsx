@@ -75,6 +75,9 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label mb-0">Senha</label>
+                <Link to="/forgot-password" className="text-xs text-[#888888] hover:text-[#d4a853] transition-colors">
+                  Esqueceu a senha?
+                </Link>
               </div>
               <div className="relative">
                 <input
@@ -97,9 +100,12 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-[#1f1f1f] text-center">
-            <Link to="/" className="text-sm text-[#888888] hover:text-[#d4a853] transition-colors">
-              ← Voltar ao início
+          <div className="mt-6 pt-6 border-t border-[#1f1f1f] flex items-center justify-between text-sm">
+            <Link to="/register" className="text-[#d4a853] hover:text-[#e8c06a] font-medium transition-colors">
+              Criar conta →
+            </Link>
+            <Link to="/" className="text-[#555555] hover:text-[#888888] transition-colors">
+              ← Início
             </Link>
           </div>
         </div>
