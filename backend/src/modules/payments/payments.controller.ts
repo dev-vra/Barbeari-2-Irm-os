@@ -2,7 +2,7 @@ import {
   Controller, Post, Get, Body, Param, Headers,
   UseGuards, Res, HttpCode, HttpStatus, Request,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { PaymentsService } from './payments.service';
