@@ -8,7 +8,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { MercadopagoService } from './mercadopago.service';
+import { StripeService } from './stripe.service';
 import { PAYMENT_EXPIRY_QUEUE } from './payment-expiry.processor';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,55 +18,52 @@ export class PaymentsService {
 
   constructor(
     private prisma: PrismaService,
-    private mercadopagoService: MercadopagoService,
+    private stripeService: StripeService,
     private config: ConfigService,
     @InjectQueue(PAYMENT_EXPIRY_QUEUE) private paymentExpiryQueue: Queue,
   ) {}
 
-  async createPreference(appointmentId: string, clientId: string) {
+  async createCheckoutSession(appointmentId: string, clientId: string) {
     const appointment = await this.prisma.appointment.findFirst({
       where: { id: appointmentId, clientId },
-      include: {
-        service: true,
-        client: true,
-        professional: true,
-      },
+      include: { service: true, client: true, professional: true },
     });
 
     if (!appointment) throw new NotFoundException('Agendamento não encontrado');
-    if (appointment.status !== 'PENDING_PAYMENT') {
-      throw new BadRequestException('Este agendamento não está aguardando pagamento');
+
+    // Allow payment for CONFIRMED or PENDING_PAYMENT appointments
+    if (!['CONFIRMED', 'PENDING_PAYMENT'].includes(appointment.status)) {
+      throw new BadRequestException('Este agendamento não pode ser pago online');
     }
 
+    // Return existing pending payment if it exists
     const existingPayment = await this.prisma.payment.findUnique({
       where: { appointmentId },
     });
-    if (existingPayment && existingPayment.status === 'PENDING') {
-      return existingPayment;
+    if (existingPayment?.status === 'PENDING' && existingPayment.preferenceId) {
+      // preferenceId stores the Stripe session ID
+      return { sessionUrl: existingPayment.preferenceId };
     }
 
     const externalRef = uuidv4();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
 
     const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
-    const backendUrl = this.config.get('BACKEND_URL') || 'http://localhost:3000';
 
-    const preferenceData = await this.mercadopagoService.createPreference({
+    const { sessionId, sessionUrl } = await this.stripeService.createCheckoutSession({
       externalRef,
-      clientEmail: appointment.client.email,
-      serviceName: `${appointment.service.name} - ${appointment.professional.name}`,
-      amount: Number(appointment.service.price),
-      notificationUrl: `${backendUrl}/api/payments/webhook`,
-      successUrl: `${frontendUrl}/client/booking/success?appointmentId=${appointmentId}`,
-      failureUrl: `${frontendUrl}/client/booking/failure?appointmentId=${appointmentId}`,
-      pendingUrl: `${frontendUrl}/client/booking/pending?appointmentId=${appointmentId}`,
+      customerEmail: appointment.client.email,
+      serviceName: `${appointment.service.name} — ${appointment.professional.name}`,
+      amountBrl: Number(appointment.service.price),
+      successUrl: `${frontendUrl}/client/appointments?payment=success&appointmentId=${appointmentId}`,
+      cancelUrl: `${frontendUrl}/client/appointments`,
     });
 
     const payment = await this.prisma.payment.upsert({
       where: { appointmentId },
       update: {
         externalRef,
-        preferenceId: preferenceData.preferenceId,
+        preferenceId: sessionUrl, // store sessionUrl for re-use
         expiresAt,
         status: 'PENDING',
       },
@@ -74,7 +71,7 @@ export class PaymentsService {
         appointmentId,
         amount: appointment.service.price,
         externalRef,
-        preferenceId: preferenceData.preferenceId,
+        preferenceId: sessionUrl,
         expiresAt,
       },
     });
@@ -83,25 +80,35 @@ export class PaymentsService {
       'expire-payment',
       { paymentId: payment.id, appointmentId },
       {
-        delay: 15 * 60 * 1000,
+        delay: 30 * 60 * 1000,
         attempts: 3,
         backoff: { type: 'exponential', delay: 5000 },
         jobId: `expiry-${payment.id}`,
       },
     );
 
-    return {
-      ...payment,
-      initPoint: preferenceData.initPoint,
-      sandboxInitPoint: preferenceData.sandboxInitPoint,
-    };
+    return { sessionUrl };
   }
 
-  async processWebhook(mercadopagoPaymentId: string) {
-    try {
-      const mpPayment = await this.mercadopagoService.getPayment(mercadopagoPaymentId);
+  async processWebhook(rawBody: Buffer, signature: string) {
+    const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET') || '';
 
-      const externalRef = mpPayment.external_reference;
+    let event: any;
+    if (webhookSecret) {
+      try {
+        event = this.stripeService.constructWebhookEvent(rawBody, signature, webhookSecret);
+      } catch (err) {
+        this.logger.warn(`Stripe webhook signature invalid: ${err.message}`);
+        throw new BadRequestException('Invalid webhook signature');
+      }
+    } else {
+      // Dev mode: skip signature verification
+      event = JSON.parse(rawBody.toString());
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const externalRef = session.metadata?.externalRef;
       if (!externalRef) return;
 
       const payment = await this.prisma.payment.findUnique({
@@ -110,52 +117,53 @@ export class PaymentsService {
       });
       if (!payment) return;
 
-      const mpStatus = mpPayment.status;
+      await this.prisma.$transaction(async (tx) => {
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'APPROVED',
+            mercadopagoId: session.payment_intent || session.id, // reuse field
+            paidAt: new Date(),
+          },
+        });
 
-      if (mpStatus === 'approved') {
-        await this.prisma.$transaction(async (tx) => {
-          await tx.payment.update({
-            where: { id: payment.id },
+        await tx.appointment.update({
+          where: { id: payment.appointmentId },
+          data: { status: 'CONFIRMED' },
+        });
+
+        const professional = payment.appointment.professional;
+        const service = payment.appointment.service;
+        const commissionPct = Number(professional.serviceCommissionPct);
+        const commissionAmount = (Number(service.price) * commissionPct) / 100;
+
+        if (commissionAmount > 0) {
+          await tx.commission.create({
             data: {
-              status: 'APPROVED',
-              mercadopagoId: String(mercadopagoPaymentId),
-              paidAt: new Date(),
+              professionalId: professional.id,
+              type: 'SERVICE',
+              appointmentId: payment.appointmentId,
+              amount: commissionAmount,
             },
           });
+        }
+      });
 
-          await tx.appointment.update({
-            where: { id: payment.appointmentId },
-            data: { status: 'CONFIRMED' },
-          });
+      this.logger.log(`Payment approved for appointment ${payment.appointmentId}`);
+    }
 
-          const professional = payment.appointment.professional;
-          const service = payment.appointment.service;
-          const commissionPct = Number(professional.serviceCommissionPct);
-          const commissionAmount = (Number(service.price) * commissionPct) / 100;
+    if (event.type === 'checkout.session.expired') {
+      const session = event.data.object;
+      const externalRef = session.metadata?.externalRef;
+      if (!externalRef) return;
 
-          if (commissionAmount > 0) {
-            await tx.commission.create({
-              data: {
-                professionalId: professional.id,
-                type: 'SERVICE',
-                appointmentId: payment.appointmentId,
-                amount: commissionAmount,
-              },
-            });
-          }
-        });
-      } else if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
+      const payment = await this.prisma.payment.findUnique({ where: { externalRef } });
+      if (payment) {
         await this.prisma.payment.update({
           where: { id: payment.id },
           data: { status: 'REJECTED' },
         });
-        await this.prisma.appointment.update({
-          where: { id: payment.appointmentId },
-          data: { status: 'CANCELLED' },
-        });
       }
-    } catch (error) {
-      this.logger.error(`Webhook processing error: ${error.message}`);
     }
   }
 

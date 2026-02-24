@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, User } from 'lucide-react'
+import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../../lib/api'
 import { formatCurrency } from '../../../lib/utils'
@@ -195,6 +195,21 @@ function StepSlot({ booking, onSelect, onBack }: {
 function StepSuccess({ booking }: { booking: BookingState }) {
   const navigate = useNavigate()
 
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/payments/create-session', {
+        appointmentId: booking.appointmentId,
+      })
+      return data as { sessionUrl: string }
+    },
+    onSuccess: ({ sessionUrl }) => {
+      window.location.href = sessionUrl
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Erro ao iniciar pagamento')
+    },
+  })
+
   return (
     <div className="text-center">
       {/* Icon */}
@@ -210,7 +225,7 @@ function StepSuccess({ booking }: { booking: BookingState }) {
       </p>
 
       {/* Summary card */}
-      <div className="card mb-8 text-left space-y-3">
+      <div className="card mb-6 text-left space-y-3">
         {[
           { label: 'Profissional', value: booking.professional?.name },
           { label: 'Serviço',      value: booking.service?.name },
@@ -229,14 +244,29 @@ function StepSuccess({ booking }: { booking: BookingState }) {
         </div>
       </div>
 
-      <p className="text-[#555555] text-xs mb-6">
-        Pagamento realizado no local no dia do atendimento.
-      </p>
+      {/* Payment options */}
+      <div className="space-y-3 mb-6">
+        <button
+          onClick={() => payMutation.mutate()}
+          disabled={payMutation.isPending}
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+          {payMutation.isPending
+            ? <><Spinner size="sm" /> Aguarde...</>
+            : <><CreditCard size={18} /> Pagar antecipado com Stripe</>}
+        </button>
 
-      <button onClick={() => navigate('/client/appointments')}
-        className="btn-primary w-full mb-3">
-        Ver meus agendamentos
-      </button>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-[#1f1f1f]" />
+          <span className="text-[#444444] text-xs">ou</span>
+          <div className="flex-1 h-px bg-[#1f1f1f]" />
+        </div>
+
+        <button onClick={() => navigate('/client/appointments')}
+          className="btn-secondary w-full text-sm">
+          Pagar no local · Ver meus agendamentos
+        </button>
+      </div>
+
       <button onClick={() => navigate('/client')}
         className="btn-ghost w-full text-sm">
         Voltar ao início
