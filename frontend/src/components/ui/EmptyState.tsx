@@ -1,7 +1,5 @@
-import { LucideIcon } from 'lucide-react'
-
 interface Props {
-  icon: LucideIcon
+  icon: React.ElementType
   title: string
   description?: string
   action?: React.ReactNode
