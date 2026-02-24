@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Scissors, Clock, ChevronRight, ChevronLeft, Check, ExternalLink, User } from 'lucide-react'
+import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../../lib/api'
 import { formatCurrency } from '../../../lib/utils'
@@ -15,11 +15,9 @@ interface BookingState {
   date?: string
   slot?: { start: string; end: string }
   appointmentId?: string
-  initPoint?: string
-  sandboxInitPoint?: string
 }
 
-const STEPS = ['Profissional', 'Serviço', 'Horário', 'Pagamento']
+const STEPS = ['Profissional', 'Serviço', 'Horário', 'Confirmação']
 
 // ── Step 1: Select Professional ────────────────────────────────────────────
 function StepProfessional({ onSelect }: { onSelect: (p: any) => void }) {
@@ -193,32 +191,32 @@ function StepSlot({ booking, onSelect, onBack }: {
   )
 }
 
-// ── Step 4: Payment ────────────────────────────────────────────────────────
-function StepPayment({ booking, onBack }: { booking: BookingState; onBack: () => void }) {
+// ── Step 4: Success ────────────────────────────────────────────────────────
+function StepSuccess({ booking }: { booking: BookingState }) {
   const navigate = useNavigate()
-  const isDev = import.meta.env.DEV
-
-  const paymentUrl = isDev
-    ? booking.sandboxInitPoint || booking.initPoint
-    : booking.initPoint
 
   return (
-    <div>
-      <h2 className="text-xl font-bold text-[#f5f5f5] mb-2">Pagamento</h2>
+    <div className="text-center">
+      {/* Icon */}
+      <div className="flex justify-center mb-6">
+        <div className="w-20 h-20 rounded-full bg-[#d4a853]/10 flex items-center justify-center">
+          <CalendarCheck size={40} className="text-[#d4a853]" />
+        </div>
+      </div>
+
+      <h2 className="text-2xl font-bold text-[#f5f5f5] mb-2">Horário Reservado!</h2>
       <p className="text-[#888888] text-sm mb-8">
-        Você tem <span className="text-[#d4a853] font-semibold">15 minutos</span> para concluir o pagamento.
-        O horário ficará reservado durante esse período.
+        Seu agendamento foi confirmado. Até lá!
       </p>
 
-      {/* Summary */}
-      <div className="card mb-6 space-y-3">
-        <h3 className="text-[#f5f5f5] font-semibold mb-4">Resumo do Agendamento</h3>
+      {/* Summary card */}
+      <div className="card mb-8 text-left space-y-3">
         {[
           { label: 'Profissional', value: booking.professional?.name },
-          { label: 'Serviço', value: booking.service?.name },
-          { label: 'Duração', value: `${booking.service?.durationMin} minutos` },
-          { label: 'Data', value: booking.date ? format(new Date(booking.date + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : '—' },
-          { label: 'Horário', value: booking.slot?.start },
+          { label: 'Serviço',      value: booking.service?.name },
+          { label: 'Duração',      value: `${booking.service?.durationMin} minutos` },
+          { label: 'Data',         value: booking.date ? format(new Date(booking.date + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : '—' },
+          { label: 'Horário',      value: booking.slot?.start },
         ].map(({ label, value }) => (
           <div key={label} className="flex justify-between text-sm">
             <span className="text-[#888888]">{label}</span>
@@ -231,24 +229,18 @@ function StepPayment({ booking, onBack }: { booking: BookingState; onBack: () =>
         </div>
       </div>
 
-      {paymentUrl ? (
-        <a href={paymentUrl} target="_blank" rel="noopener noreferrer"
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3 mb-4">
-          <ExternalLink size={18} /> Pagar com Mercado Pago
-        </a>
-      ) : (
-        <div className="text-center text-[#555555] py-4">Link de pagamento não disponível</div>
-      )}
+      <p className="text-[#555555] text-xs mb-6">
+        Pagamento realizado no local no dia do atendimento.
+      </p>
 
-      <button onClick={() => navigate('/client/appointments')} className="btn-secondary w-full text-sm mb-3">
+      <button onClick={() => navigate('/client/appointments')}
+        className="btn-primary w-full mb-3">
         Ver meus agendamentos
       </button>
-
-      <div className="flex justify-start">
-        <button onClick={onBack} className="btn-ghost flex items-center gap-1">
-          <ChevronLeft size={16} /> Voltar
-        </button>
-      </div>
+      <button onClick={() => navigate('/client')}
+        className="btn-ghost w-full text-sm">
+        Voltar ao início
+      </button>
     </div>
   )
 }
@@ -263,28 +255,19 @@ export default function BookingFlow() {
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
-  // Create appointment + payment preference when slot is confirmed
+  // Create appointment when slot is confirmed
   const createAppointmentMutation = useMutation({
     mutationFn: async ({ date, slot }: { date: string; slot: any }) => {
-      // 1. Create appointment
       const { data: appt } = await api.post('/appointments', {
         professionalId: booking.professional?.id,
         serviceId: booking.service?.id,
         date,                  // YYYY-MM-DD
         slotStart: slot.start, // HH:MM
       })
-      // 2. Create payment preference
-      const { data: payment } = await api.post('/payments/create-preference', {
-        appointmentId: appt.id,
-      })
-      return { appt, payment }
+      return appt
     },
-    onSuccess: ({ appt, payment }) => {
-      update({
-        appointmentId: appt.id,
-        initPoint: payment.initPoint,
-        sandboxInitPoint: payment.sandboxInitPoint,
-      })
+    onSuccess: (appt) => {
+      update({ appointmentId: appt.id })
       next()
     },
     onError: (err: any) => {
@@ -349,7 +332,7 @@ export default function BookingFlow() {
           <StepSlot booking={booking} onSelect={handleSlotConfirm} onBack={back} />
         )}
         {step === 3 && (
-          <StepPayment booking={booking} onBack={back} />
+          <StepSuccess booking={booking} />
         )}
       </div>
     </div>

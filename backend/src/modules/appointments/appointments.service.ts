@@ -41,7 +41,7 @@ export class AppointmentsService {
         scheduledAt,
         endsAt,
         notes: dto.notes,
-        status: 'PENDING_PAYMENT',
+        status: 'CONFIRMED',
       },
       include: { service: true, professional: true },
     });
