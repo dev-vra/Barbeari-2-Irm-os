@@ -23,7 +23,7 @@ export class PaymentsController {
     @Body() dto: CreatePaymentPreferenceDto,
     @CurrentUser() user: any,
   ) {
-    return this.paymentsService.createCheckoutSession(dto.appointmentId, user.id);
+    return this.paymentsService.createCheckoutSession(dto.appointmentId, user.id, dto.paymentMethod);
   }
 
   @Post('webhook')

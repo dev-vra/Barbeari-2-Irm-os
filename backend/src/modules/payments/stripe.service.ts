@@ -25,18 +25,21 @@ export class StripeService {
     amountBrl: number;
     successUrl: string;
     cancelUrl: string;
+    paymentMethod: 'card' | 'pix';
   }) {
-    const expiresAt = Math.floor(Date.now() / 1000) + 30 * 60; // 30 min
+    const isPix = params.paymentMethod === 'pix';
+    // PIX sessions: 1h expiry (Stripe minimum for pix); card sessions: 30 min
+    const expiresAt = Math.floor(Date.now() / 1000) + (isPix ? 60 * 60 : 30 * 60);
 
-    const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+    const sessionParams: any = {
+      payment_method_types: [params.paymentMethod],
       customer_email: params.customerEmail,
       line_items: [
         {
           price_data: {
             currency: 'brl',
             product_data: { name: params.serviceName },
-            unit_amount: Math.round(params.amountBrl * 100), // cents
+            unit_amount: Math.round(params.amountBrl * 100),
           },
           quantity: 1,
         },
@@ -46,8 +49,18 @@ export class StripeService {
       cancel_url: params.cancelUrl,
       metadata: { externalRef: params.externalRef },
       expires_at: expiresAt,
-    } as any);
+    };
 
+    // PIX requires payment_intent_data with expiry
+    if (isPix) {
+      sessionParams.payment_intent_data = {
+        payment_method_options: {
+          pix: { expires_after_seconds: 3600 },
+        },
+      };
+    }
+
+    const session = await this.stripe.checkout.sessions.create(sessionParams);
     return { sessionId: session.id, sessionUrl: session.url! };
   }
 

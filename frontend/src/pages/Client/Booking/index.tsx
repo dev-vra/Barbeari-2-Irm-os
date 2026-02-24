@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, CreditCard } from 'lucide-react'
+import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, CreditCard, Smartphone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../../lib/api'
 import { formatCurrency } from '../../../lib/utils'
@@ -196,9 +196,10 @@ function StepSuccess({ booking }: { booking: BookingState }) {
   const navigate = useNavigate()
 
   const payMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (paymentMethod: 'card' | 'pix') => {
       const { data } = await api.post('/payments/create-session', {
         appointmentId: booking.appointmentId,
+        paymentMethod,
       })
       return data as { sessionUrl: string }
     },
@@ -209,6 +210,8 @@ function StepSuccess({ booking }: { booking: BookingState }) {
       toast.error(err?.response?.data?.message || 'Erro ao iniciar pagamento')
     },
   })
+
+  const isPending = payMutation.isPending
 
   return (
     <div className="text-center">
@@ -244,28 +247,57 @@ function StepSuccess({ booking }: { booking: BookingState }) {
         </div>
       </div>
 
-      {/* Payment options */}
-      <div className="space-y-3 mb-6">
+      {/* Online payment options */}
+      <p className="text-[#888888] text-xs mb-3 text-left">Pagar antecipado online:</p>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {/* PIX */}
         <button
-          onClick={() => payMutation.mutate()}
-          disabled={payMutation.isPending}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3">
-          {payMutation.isPending
-            ? <><Spinner size="sm" /> Aguarde...</>
-            : <><CreditCard size={18} /> Pagar antecipado com Stripe</>}
+          onClick={() => payMutation.mutate('pix')}
+          disabled={isPending}
+          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-[#1f1f1f]
+            bg-[#111111] hover:border-[#d4a853]/50 hover:bg-[#1a1a1a]
+            disabled:opacity-40 disabled:cursor-not-allowed transition-all group">
+          <div className="w-10 h-10 rounded-full bg-[#00b4d8]/10 flex items-center justify-center group-hover:bg-[#00b4d8]/20 transition-colors">
+            {isPending
+              ? <Spinner size="sm" />
+              : <Smartphone size={20} className="text-[#00b4d8]" />}
+          </div>
+          <div>
+            <p className="text-[#f5f5f5] text-sm font-semibold">PIX</p>
+            <p className="text-[#555555] text-xs">Instantâneo</p>
+          </div>
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-[#1f1f1f]" />
-          <span className="text-[#444444] text-xs">ou</span>
-          <div className="flex-1 h-px bg-[#1f1f1f]" />
-        </div>
-
-        <button onClick={() => navigate('/client/appointments')}
-          className="btn-secondary w-full text-sm">
-          Pagar no local · Ver meus agendamentos
+        {/* Card */}
+        <button
+          onClick={() => payMutation.mutate('card')}
+          disabled={isPending}
+          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-[#1f1f1f]
+            bg-[#111111] hover:border-[#d4a853]/50 hover:bg-[#1a1a1a]
+            disabled:opacity-40 disabled:cursor-not-allowed transition-all group">
+          <div className="w-10 h-10 rounded-full bg-[#d4a853]/10 flex items-center justify-center group-hover:bg-[#d4a853]/20 transition-colors">
+            {isPending
+              ? <Spinner size="sm" />
+              : <CreditCard size={20} className="text-[#d4a853]" />}
+          </div>
+          <div>
+            <p className="text-[#f5f5f5] text-sm font-semibold">Cartão</p>
+            <p className="text-[#555555] text-xs">Crédito / Débito</p>
+          </div>
         </button>
       </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-[#1f1f1f]" />
+        <span className="text-[#444444] text-xs">ou</span>
+        <div className="flex-1 h-px bg-[#1f1f1f]" />
+      </div>
+
+      <button onClick={() => navigate('/client/appointments')}
+        className="btn-secondary w-full text-sm mb-3">
+        Pagar no local · Ver meus agendamentos
+      </button>
 
       <button onClick={() => navigate('/client')}
         className="btn-ghost w-full text-sm">

@@ -23,7 +23,11 @@ export class PaymentsService {
     @InjectQueue(PAYMENT_EXPIRY_QUEUE) private paymentExpiryQueue: Queue,
   ) {}
 
-  async createCheckoutSession(appointmentId: string, clientId: string) {
+  async createCheckoutSession(
+    appointmentId: string,
+    clientId: string,
+    paymentMethod: 'card' | 'pix' = 'card',
+  ) {
     const appointment = await this.prisma.appointment.findFirst({
       where: { id: appointmentId, clientId },
       include: { service: true, client: true, professional: true },
@@ -46,7 +50,8 @@ export class PaymentsService {
     }
 
     const externalRef = uuidv4();
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+    const expiryMs = paymentMethod === 'pix' ? 60 * 60 * 1000 : 30 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + expiryMs);
 
     const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
 
@@ -57,6 +62,7 @@ export class PaymentsService {
       amountBrl: Number(appointment.service.price),
       successUrl: `${frontendUrl}/client/appointments?payment=success&appointmentId=${appointmentId}`,
       cancelUrl: `${frontendUrl}/client/appointments`,
+      paymentMethod,
     });
 
     const payment = await this.prisma.payment.upsert({
