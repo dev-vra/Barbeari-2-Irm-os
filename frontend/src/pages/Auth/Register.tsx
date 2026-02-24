@@ -7,16 +7,20 @@ import { Scissors, Eye, EyeOff, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { useAuthStore } from '../../store/auth.store'
+import MaskedInput from '../../components/ui/MaskedInput'
+import { maskCpf, maskPhone, maskDate, dateDisplayToIso, digitsOnly } from '../../lib/masks'
 
 const schema = z.object({
   name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres'),
   email: z.string().email('E-mail inválido'),
   cpf: z
     .string()
-    .transform(v => v.replace(/\D/g, ''))
-    .pipe(z.string().length(11, 'CPF deve ter 11 dígitos')),
+    .refine(v => v.replace(/\D/g, '').length === 11, 'CPF deve ter 11 dígitos'),
   phone: z.string().optional(),
-  birthdate: z.string().optional(),
+  birthdate: z
+    .string()
+    .optional()
+    .refine(v => !v || v.length === 0 || /^\d{2}\/\d{2}\/\d{4}$/.test(v), 'Data inválida (dd/mm/aaaa)'),
   password: z.string().min(6, 'Mínimo 6 caracteres'),
   confirmPassword: z.string(),
 }).refine(d => d.password === d.confirmPassword, {
@@ -41,10 +45,10 @@ export default function Register() {
       const payload = {
         name: data.name,
         email: data.email,
-        cpf: data.cpf,
+        cpf: digitsOnly(data.cpf),
         password: data.password,
         phone: data.phone || undefined,
-        birthdate: data.birthdate || undefined,
+        birthdate: data.birthdate ? dateDisplayToIso(data.birthdate) : undefined,
       }
       const res = await api.post('/auth/register', payload)
       setAuth(res.data.user, res.data.accessToken, res.data.refreshToken)
@@ -100,25 +104,40 @@ export default function Register() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">CPF *</label>
-                <input
-                  {...register('cpf')}
+                <MaskedInput
+                  mask={maskCpf}
+                  registration={register('cpf')}
                   className="input"
                   placeholder="000.000.000-00"
                   autoComplete="off"
-                  maxLength={14}
+                  inputMode="numeric"
                 />
                 {errors.cpf && <p className="text-red-400 text-xs mt-1">{errors.cpf.message}</p>}
               </div>
               <div>
                 <label className="label">Telefone</label>
-                <input {...register('phone')} className="input" placeholder="(65) 99999-9999" autoComplete="tel" />
+                <MaskedInput
+                  mask={maskPhone}
+                  registration={register('phone')}
+                  className="input"
+                  placeholder="(65) 9 9999-9999"
+                  autoComplete="tel"
+                  inputMode="numeric"
+                />
               </div>
             </div>
 
             {/* Birthdate */}
             <div>
               <label className="label">Data de nascimento</label>
-              <input {...register('birthdate')} type="date" className="input" />
+              <MaskedInput
+                mask={maskDate}
+                registration={register('birthdate')}
+                className="input"
+                placeholder="dd/mm/aaaa"
+                inputMode="numeric"
+              />
+              {errors.birthdate && <p className="text-red-400 text-xs mt-1">{errors.birthdate.message}</p>}
               <p className="text-[#555555] text-xs mt-1">Usada para recuperação de senha</p>
             </div>
 

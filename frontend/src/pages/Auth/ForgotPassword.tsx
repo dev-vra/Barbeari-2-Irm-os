@@ -6,14 +6,18 @@ import { z } from 'zod'
 import { Scissors, Eye, EyeOff, KeyRound, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
+import MaskedInput from '../../components/ui/MaskedInput'
+import { maskCpf, maskDate, dateDisplayToIso, digitsOnly } from '../../lib/masks'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
   cpf: z
     .string()
-    .transform(v => v.replace(/\D/g, ''))
-    .pipe(z.string().length(11, 'CPF deve ter 11 dígitos')),
-  birthdate: z.string().min(1, 'Data de nascimento obrigatória'),
+    .refine(v => v.replace(/\D/g, '').length === 11, 'CPF deve ter 11 dígitos'),
+  birthdate: z
+    .string()
+    .min(1, 'Data de nascimento obrigatória')
+    .refine(v => /^\d{2}\/\d{2}\/\d{4}$/.test(v), 'Data inválida (dd/mm/aaaa)'),
   newPassword: z.string().min(6, 'Mínimo 6 caracteres'),
   confirmPassword: z.string(),
 }).refine(d => d.newPassword === d.confirmPassword, {
@@ -37,8 +41,8 @@ export default function ForgotPassword() {
     try {
       await api.post('/auth/reset-password', {
         email: data.email,
-        cpf: data.cpf,
-        birthdate: data.birthdate,
+        cpf: digitsOnly(data.cpf),
+        birthdate: dateDisplayToIso(data.birthdate),
         newPassword: data.newPassword,
       })
       setDone(true)
@@ -115,18 +119,25 @@ export default function ForgotPassword() {
 
                   <div>
                     <label className="label">CPF *</label>
-                    <input
-                      {...register('cpf')}
+                    <MaskedInput
+                      mask={maskCpf}
+                      registration={register('cpf')}
                       className="input"
                       placeholder="000.000.000-00"
-                      maxLength={14}
+                      inputMode="numeric"
                     />
                     {errors.cpf && <p className="text-red-400 text-xs mt-1">{errors.cpf.message}</p>}
                   </div>
 
                   <div>
                     <label className="label">Data de nascimento *</label>
-                    <input {...register('birthdate')} type="date" className="input" />
+                    <MaskedInput
+                    mask={maskDate}
+                    registration={register('birthdate')}
+                    className="input"
+                    placeholder="dd/mm/aaaa"
+                    inputMode="numeric"
+                  />
                     {errors.birthdate && <p className="text-red-400 text-xs mt-1">{errors.birthdate.message}</p>}
                   </div>
                 </div>

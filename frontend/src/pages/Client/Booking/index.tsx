@@ -267,11 +267,11 @@ export default function BookingFlow() {
   const createAppointmentMutation = useMutation({
     mutationFn: async ({ date, slot }: { date: string; slot: any }) => {
       // 1. Create appointment
-      const scheduledAt = new Date(`${date}T${slot.start}:00`)
       const { data: appt } = await api.post('/appointments', {
         professionalId: booking.professional?.id,
         serviceId: booking.service?.id,
-        scheduledAt: scheduledAt.toISOString(),
+        date,                  // YYYY-MM-DD
+        slotStart: slot.start, // HH:MM
       })
       // 2. Create payment preference
       const { data: payment } = await api.post('/payments/create-preference', {

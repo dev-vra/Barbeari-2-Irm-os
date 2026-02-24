@@ -11,13 +11,15 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import EmptyState from '../../components/ui/EmptyState'
 import Spinner from '../../components/ui/Spinner'
 import { formatCpf, formatDate } from '../../lib/utils'
+import MaskedInput from '../../components/ui/MaskedInput'
+import { maskCpf, maskPhone, maskDate, dateDisplayToIso, isoToDateDisplay, digitsOnly } from '../../lib/masks'
 
 const createSchema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
   email: z.string().email('E-mail inválido'),
-  cpf: z.string().min(11, 'CPF inválido').max(14),
+  cpf: z.string().refine(v => v.replace(/\D/g, '').length === 11, 'CPF inválido (11 dígitos)'),
   phone: z.string().optional(),
-  birthdate: z.string().optional(),
+  birthdate: z.string().optional().refine(v => !v || /^\d{2}\/\d{2}\/\d{4}$/.test(v), 'Data inválida (dd/mm/aaaa)'),
   password: z.string().min(6, 'Mínimo 6 caracteres'),
   confirmPassword: z.string(),
 }).refine(d => d.password === d.confirmPassword, {
@@ -28,9 +30,9 @@ const createSchema = z.object({
 const editSchema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
   email: z.string().email('E-mail inválido'),
-  cpf: z.string().min(11, 'CPF inválido').max(14),
+  cpf: z.string().refine(v => v.replace(/\D/g, '').length === 11, 'CPF inválido (11 dígitos)'),
   phone: z.string().optional(),
-  birthdate: z.string().optional(),
+  birthdate: z.string().optional().refine(v => !v || /^\d{2}\/\d{2}\/\d{4}$/.test(v), 'Data inválida (dd/mm/aaaa)'),
 })
 
 type CreateData = z.infer<typeof createSchema>
@@ -77,18 +79,24 @@ export default function AdminClients() {
     editForm.reset({
       name: c.name,
       email: c.email,
-      cpf: c.cpf,
+      cpf: formatCpf(c.cpf),
       phone: c.phone || '',
-      birthdate: c.birthdate ? c.birthdate.slice(0, 10) : '',
+      birthdate: c.birthdate ? isoToDateDisplay(c.birthdate.slice(0, 10)) : '',
     })
     setModalOpen(true)
   }
 
   const saveMutation = useMutation({
-    mutationFn: (data: any) =>
-      editing
-        ? api.put(`/users/${editing.id}`, data)
-        : api.post('/users', { ...data, role: 'CLIENT' }),
+    mutationFn: (data: any) => {
+      const payload = {
+        ...data,
+        cpf: digitsOnly(data.cpf),
+        birthdate: data.birthdate ? dateDisplayToIso(data.birthdate) : undefined,
+      }
+      return editing
+        ? api.put(`/users/${editing.id}`, payload)
+        : api.post('/users', { ...payload, role: 'CLIENT' })
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clients-admin'] })
       setModalOpen(false)
@@ -222,7 +230,13 @@ export default function AdminClients() {
               </div>
               <div>
                 <label className="label">CPF *</label>
-                <input {...editForm.register('cpf')} className="input" placeholder="000.000.000-00" />
+                <MaskedInput
+                  mask={maskCpf}
+                  registration={editForm.register('cpf')}
+                  className="input"
+                  placeholder="000.000.000-00"
+                  inputMode="numeric"
+                />
                 {editForm.formState.errors.cpf && (
                   <p className="text-red-400 text-xs mt-1">{editForm.formState.errors.cpf.message}</p>
                 )}
@@ -238,11 +252,23 @@ export default function AdminClients() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Telefone</label>
-                <input {...editForm.register('phone')} className="input" placeholder="(65) 99999-9999" />
+                <MaskedInput
+                  mask={maskPhone}
+                  registration={editForm.register('phone')}
+                  className="input"
+                  placeholder="(65) 9 9999-9999"
+                  inputMode="numeric"
+                />
               </div>
               <div>
                 <label className="label">Data de Nascimento</label>
-                <input {...editForm.register('birthdate')} type="date" className="input" />
+                <MaskedInput
+                  mask={maskDate}
+                  registration={editForm.register('birthdate')}
+                  className="input"
+                  placeholder="dd/mm/aaaa"
+                  inputMode="numeric"
+                />
               </div>
             </div>
             <div className="flex gap-3 pt-2">
@@ -268,7 +294,13 @@ export default function AdminClients() {
               </div>
               <div>
                 <label className="label">CPF *</label>
-                <input {...createForm.register('cpf')} className="input" placeholder="000.000.000-00" />
+                <MaskedInput
+                  mask={maskCpf}
+                  registration={createForm.register('cpf')}
+                  className="input"
+                  placeholder="000.000.000-00"
+                  inputMode="numeric"
+                />
                 {createForm.formState.errors.cpf && (
                   <p className="text-red-400 text-xs mt-1">{createForm.formState.errors.cpf.message}</p>
                 )}
@@ -284,11 +316,23 @@ export default function AdminClients() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Telefone</label>
-                <input {...createForm.register('phone')} className="input" placeholder="(65) 99999-9999" />
+                <MaskedInput
+                  mask={maskPhone}
+                  registration={createForm.register('phone')}
+                  className="input"
+                  placeholder="(65) 9 9999-9999"
+                  inputMode="numeric"
+                />
               </div>
               <div>
                 <label className="label">Data de Nascimento</label>
-                <input {...createForm.register('birthdate')} type="date" className="input" />
+                <MaskedInput
+                  mask={maskDate}
+                  registration={createForm.register('birthdate')}
+                  className="input"
+                  placeholder="dd/mm/aaaa"
+                  inputMode="numeric"
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
