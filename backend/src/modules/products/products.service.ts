@@ -45,7 +45,7 @@ export class ProductsService {
     const totalPrice = unitPrice * dto.quantity;
     const commissionAmount = totalPrice * (Number(product.commissionPct) / 100);
 
-    const [sale] = await this.prisma.([
+    const [sale] = await this.prisma.$transaction([
       this.prisma.productSale.create({
         data: {
           clientId: dto.clientId,

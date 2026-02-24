@@ -7,7 +7,7 @@ import * as fs from 'fs';
 export class UploadService {
   constructor(private config: ConfigService) {
     const uploadPath = this.config.get('UPLOAD_PATH') || './uploads';
-    if (\!fs.existsSync(uploadPath)) {
+    if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
   }

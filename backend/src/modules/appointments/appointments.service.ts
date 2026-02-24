@@ -17,7 +17,7 @@ export class AppointmentsService {
 
   async create(clientId: string, dto: CreateAppointmentDto) {
     const service = await this.prisma.service.findUnique({ where: { id: dto.serviceId } });
-    if (\!service) throw new BadRequestException('Servico nao encontrado');
+    if (!service) throw new BadRequestException('Servico nao encontrado');
 
     const slots = await this.slotCalculator.getAvailableSlots(
       dto.professionalId,
@@ -26,7 +26,7 @@ export class AppointmentsService {
     );
 
     const slot = slots.find((s) => s.start === dto.slotStart);
-    if (\!slot || \!slot.available) throw new BadRequestException('Horario nao disponivel');
+    if (!slot || !slot.available) throw new BadRequestException('Horario nao disponivel');
 
     const [h, m] = dto.slotStart.split(':').map(Number);
     const scheduledAt = parseISO(dto.date);
@@ -113,7 +113,7 @@ export class AppointmentsService {
         payment: true,
       },
     });
-    if (\!appt) throw new NotFoundException('Agendamento nao encontrado');
+    if (!appt) throw new NotFoundException('Agendamento nao encontrado');
     return appt;
   }
 

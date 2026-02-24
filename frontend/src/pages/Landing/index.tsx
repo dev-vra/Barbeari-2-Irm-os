@@ -249,11 +249,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               {[
-                { icon: MapPin, label: 'Endereço', value: 'Av. Joaquim Louzada, 6
-Novo Colorado, Cuiabá - MT
-CEP 78042-515' },
-                { icon: Clock, label: 'Horário de Funcionamento', value: 'Segunda a Sábado
-08:00 às 20:00' },
+                { icon: MapPin, label: 'Endereço', value: 'Av. Joaquim Louzada, 6\nNovo Colorado, Cuiabá - MT\nCEP 78042-515' },
+                { icon: Clock, label: 'Horário de Funcionamento', value: 'Segunda a Sábado\n08:00 às 20:00' },
                 { icon: Phone, label: 'Telefone / WhatsApp', value: '(65) 98114-3182' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex gap-4">
