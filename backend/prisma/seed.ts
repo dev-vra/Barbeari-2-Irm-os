@@ -58,6 +58,15 @@ function slotsFor(durationMin: number): string[] {
 async function main() {
   console.log('🌱 Seeding Barbearia 2 Irmãos...\n');
 
+  // ── Guard: skip if already seeded ────────────────────────────────────────
+  const existing = await prisma.user.findUnique({
+    where: { email: 'admin@barbearia2irmaos.com' },
+  });
+  if (existing) {
+    console.log('⏭️  Banco já possui dados (admin encontrado). Seed ignorado.\n');
+    return;
+  }
+
   // ── Admin ────────────────────────────────────────────────────────────────
   const admin = await prisma.user.upsert({
     where: { email: 'admin@barbearia2irmaos.com' },

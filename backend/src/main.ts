@@ -10,7 +10,10 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin) return callback(null, true); // server-to-server requests
       const allowed = (process.env.FRONTEND_URL || 'http://localhost:5173')
         .split(',')
