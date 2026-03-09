@@ -19,9 +19,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY prisma ./prisma
-# NOTE: prisma.config.ts is intentionally NOT copied here.
-# In production, Prisma reads datasource.url from schema.prisma (url = env("DATABASE_URL")).
-# Copying prisma.config.ts would make it take precedence and break migrate deploy.
+COPY prisma.config.ts ./
 
 ENV NODE_ENV=production
 
