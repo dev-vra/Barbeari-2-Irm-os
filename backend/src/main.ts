@@ -10,7 +10,18 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // server-to-server requests
+      const allowed = (process.env.FRONTEND_URL || 'http://localhost:5173')
+        .split(',')
+        .map((u) => u.trim());
+      const ok =
+        allowed.includes(origin) ||
+        origin.endsWith('.railway.app') ||
+        origin.endsWith('.vercel.app') ||
+        origin === 'http://localhost:5173';
+      callback(ok ? null : new Error('Not allowed by CORS'), ok);
+    },
     credentials: true,
   });
 
