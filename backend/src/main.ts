@@ -18,8 +18,11 @@ async function bootstrap() {
       const ok =
         allowed.includes(origin) ||
         origin.endsWith('.railway.app') ||
+        origin.endsWith('.railway.com') ||
+        origin === 'https://railway.com' ||
         origin.endsWith('.vercel.app') ||
-        origin === 'http://localhost:5173';
+        origin === 'http://localhost:5173' ||
+        origin === 'http://localhost:4173';
       callback(ok ? null : new Error('Not allowed by CORS'), ok);
     },
     credentials: true,
