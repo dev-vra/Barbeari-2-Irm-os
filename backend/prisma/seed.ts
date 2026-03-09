@@ -1,10 +1,9 @@
 import { PrismaClient, Role, ProductType, AppointmentStatus, PaymentMethod, PaymentStatus, CommissionType } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
 import 'dotenv/config';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+// Standard PrismaClient — reads URL from prisma.config.ts (no adapter needed in Node.js)
+const prisma = new PrismaClient();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
