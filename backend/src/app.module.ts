@@ -23,6 +23,9 @@ import { UploadModule } from './modules/upload/upload.module';
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        // Upstash requires TLS in production (rediss://); local Docker does not
+        tls: process.env.REDIS_PASSWORD ? {} : undefined,
       },
     }),
     PrismaModule,
