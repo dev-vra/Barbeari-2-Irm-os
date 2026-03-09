@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (Vite)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js"],
+      "cwd": "C:/Users/viniciusaraujo/Documents/GDrive/projects/barber/frontend",
+      "port": 5173
+    },
+    {
+      "name": "Backend (NestJS)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/@nestjs/cli/bin/nest.js", "start", "--watch"],
+      "cwd": "C:/Users/viniciusaraujo/Documents/GDrive/projects/barber/backend",
+      "port": 3005
+    },
+    {
+      "name": "PostgreSQL (Docker)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "--no-recreate", "postgres"],
+      "port": 5434
+    },
+    {
+      "name": "Redis (Docker)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "--no-recreate", "redis"],
+      "port": 6379
+    }
+  ]
+}

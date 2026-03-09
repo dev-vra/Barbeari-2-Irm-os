@@ -1,17 +1,17 @@
-﻿import { IsString, IsNotEmpty, IsNumber, Min } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+﻿import { IsString, IsNotEmpty, IsNumber, Min, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class ProductSaleDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  clientId: string;
+  clientId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  professionalId: string;
+  professionalId?: string;
 
   @ApiProperty()
   @IsNumber()

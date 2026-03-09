@@ -121,7 +121,7 @@ export default function AdminClients() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[#f5f5f5]">Clientes</h1>
           <p className="text-[#888888] mt-1">{clients.length} cliente(s) cadastrado(s)</p>
@@ -138,7 +138,7 @@ export default function AdminClients() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por nome, e-mail ou CPF..."
-          className="input pl-10 w-full max-w-md"
+          className="input pl-10 w-full"
         />
       </div>
 
@@ -192,13 +192,13 @@ export default function AdminClients() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => openEdit(client)}
-                        className="p-1.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors"
+                        className="p-2.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(client)}
-                        className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="p-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -220,7 +220,7 @@ export default function AdminClients() {
       >
         {editing ? (
           <form onSubmit={editForm.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Nome *</label>
                 <input {...editForm.register('name')} className="input" />
@@ -249,7 +249,7 @@ export default function AdminClients() {
                 <p className="text-red-400 text-xs mt-1">{editForm.formState.errors.email.message}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Telefone</label>
                 <MaskedInput
@@ -284,7 +284,7 @@ export default function AdminClients() {
           </form>
         ) : (
           <form onSubmit={createForm.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Nome *</label>
                 <input {...createForm.register('name')} className="input" />
@@ -313,7 +313,7 @@ export default function AdminClients() {
                 <p className="text-red-400 text-xs mt-1">{createForm.formState.errors.email.message}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Telefone</label>
                 <MaskedInput
@@ -335,7 +335,7 @@ export default function AdminClients() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Senha *</label>
                 <div className="relative">

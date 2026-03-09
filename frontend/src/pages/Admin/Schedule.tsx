@@ -128,12 +128,12 @@ export default function AdminSchedule() {
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => completeMutation.mutate(appt.id)}
                           title="Marcar como concluído"
-                          className="p-1.5 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors">
+                          className="p-2.5 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors">
                           <CheckCircle size={16} />
                         </button>
                         <button onClick={() => cancelMutation.mutate(appt.id)}
                           title="Cancelar"
-                          className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                          className="p-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                           <XCircle size={16} />
                         </button>
                       </div>

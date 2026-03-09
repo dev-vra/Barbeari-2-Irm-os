@@ -43,6 +43,7 @@ enum ProductType {
   BARBERING
   SKINCARE
   ACCESSORY
+  BEVERAGE
   OTHER
 }
 
@@ -230,17 +231,17 @@ model Payment {
 
 model ProductSale {
   id             String   @id @default(uuid())
-  clientId       String
-  professionalId String
+  clientId       String?
+  professionalId String?
   productId      String
   quantity       Int
   unitPrice      Decimal  @db.Decimal(10, 2)
   totalPrice     Decimal  @db.Decimal(10, 2)
   soldAt         DateTime @default(now())
 
-  client       User         @relation(fields: [clientId], references: [id])
-  professional Professional @relation(fields: [professionalId], references: [id])
-  product      Product      @relation(fields: [productId], references: [id])
+  client       User?         @relation(fields: [clientId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id])
   commissions  Commission[]
 
   @@map("product_sales")

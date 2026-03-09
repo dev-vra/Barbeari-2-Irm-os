@@ -39,7 +39,9 @@ export class AppointmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create appointment' })
   create(@CurrentUser() user: any, @Body() dto: CreateAppointmentDto) {
-    return this.service.create(user.id, dto);
+    // Admin can pass clientId to book for a specific client
+    const clientId = user.role === 'ADMIN' && dto.clientId ? dto.clientId : user.id;
+    return this.service.create(clientId, dto);
   }
 
   @Get()

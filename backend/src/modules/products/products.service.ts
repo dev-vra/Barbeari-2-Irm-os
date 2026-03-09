@@ -62,7 +62,7 @@ export class ProductsService {
       }),
     ]);
 
-    if (commissionAmount > 0) {
+    if (commissionAmount > 0 && dto.professionalId) {
       await this.prisma.commission.create({
         data: {
           professionalId: dto.professionalId,

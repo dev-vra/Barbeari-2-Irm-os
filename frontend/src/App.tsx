@@ -24,8 +24,11 @@ const AdminSchedule = lazy(() => import('./pages/Admin/Schedule'))
 const AdminProfessionals = lazy(() => import('./pages/Admin/Professionals'))
 const AdminServices = lazy(() => import('./pages/Admin/Services'))
 const AdminProducts = lazy(() => import('./pages/Admin/Products'))
+const AdminSales = lazy(() => import('./pages/Admin/Sales'))
+const AdminAppointments = lazy(() => import('./pages/Admin/Appointments'))
 const AdminClients = lazy(() => import('./pages/Admin/Clients'))
 const AdminReports = lazy(() => import('./pages/Admin/Reports'))
+const AdminConsumo = lazy(() => import('./pages/Admin/Consumo'))
 
 function Loading() {
   return (
@@ -62,9 +65,12 @@ export default function App() {
               <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/schedule" element={<AdminSchedule />} />
+                <Route path="/admin/appointments" element={<AdminAppointments />} />
                 <Route path="/admin/professionals" element={<AdminProfessionals />} />
                 <Route path="/admin/services" element={<AdminServices />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/admin/consumo" element={<AdminConsumo />} />
+                <Route path="/admin/sales" element={<AdminSales />} />
                 <Route path="/admin/clients" element={<AdminClients />} />
                 <Route path="/admin/reports" element={<AdminReports />} />
               </Route>

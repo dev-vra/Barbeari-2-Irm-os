@@ -135,35 +135,69 @@ export class ReportsService {
     return { data: professionals, count: professionals.length };
   }
 
-  async getAdminDashboard() {
+  async getAdminDashboard(filters?: {
+    professionalId?: string;
+    serviceId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEnd = new Date(today);
     todayEnd.setHours(23, 59, 59, 999);
 
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+    const monthStart = filters?.startDate
+      ? new Date(filters.startDate)
+      : new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = filters?.endDate
+      ? new Date(filters.endDate + 'T23:59:59')
+      : new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+
+    const apptWhere: any = {
+      scheduledAt: { gte: monthStart, lte: monthEnd },
+      status: { in: ['CONFIRMED', 'COMPLETED'] },
+    };
+    if (filters?.professionalId) apptWhere.professionalId = filters.professionalId;
+    if (filters?.serviceId) apptWhere.serviceId = filters.serviceId;
+
+    const todayWhere: any = {
+      scheduledAt: { gte: today, lte: todayEnd },
+      status: { in: ['CONFIRMED', 'COMPLETED'] },
+    };
+    if (filters?.professionalId) todayWhere.professionalId = filters.professionalId;
+
+    const todayPendingWhere: any = {
+      scheduledAt: { gte: today, lte: todayEnd },
+      status: 'PENDING_PAYMENT',
+    };
+    if (filters?.professionalId) todayPendingWhere.professionalId = filters.professionalId;
+
+    const commissionWhere: any = {
+      createdAt: { gte: monthStart, lte: monthEnd },
+      paidAt: null,
+    };
+    if (filters?.professionalId) commissionWhere.professionalId = filters.professionalId;
+
+    // Revenue = sum of service prices for confirmed/completed appointments in period
+    const confirmedAppts = await this.prisma.appointment.findMany({
+      where: apptWhere,
+      include: { service: { select: { price: true } } },
+    });
+
+    const monthRevenue = confirmedAppts.reduce((sum, a) => sum + Number(a.service.price), 0);
+    const monthAppointments = confirmedAppts.length;
 
     const [
-      appointmentsToday,
-      appointmentsMonth,
-      revenueMonth,
-      pendingCommissions,
+      todayAppointments,
+      todayPending,
+      monthCommissionsAgg,
       totalClients,
       productsLowStock,
     ] = await Promise.all([
-      this.prisma.appointment.count({
-        where: { scheduledAt: { gte: today, lte: todayEnd }, status: { in: ['CONFIRMED', 'COMPLETED'] } },
-      }),
-      this.prisma.appointment.count({
-        where: { scheduledAt: { gte: monthStart, lte: monthEnd }, status: { in: ['CONFIRMED', 'COMPLETED'] } },
-      }),
-      this.prisma.payment.aggregate({
-        where: { status: 'APPROVED', paidAt: { gte: monthStart, lte: monthEnd } },
-        _sum: { amount: true },
-      }),
+      this.prisma.appointment.count({ where: todayWhere }),
+      this.prisma.appointment.count({ where: todayPendingWhere }),
       this.prisma.commission.aggregate({
-        where: { paidAt: null },
+        where: commissionWhere,
         _sum: { amount: true },
       }),
       this.prisma.user.count({ where: { role: 'CLIENT', isActive: true } }),
@@ -171,10 +205,11 @@ export class ReportsService {
     ]);
 
     return {
-      appointmentsToday,
-      appointmentsMonth,
-      revenueMonth: Number(revenueMonth._sum.amount || 0),
-      pendingCommissions: Number(pendingCommissions._sum.amount || 0),
+      monthRevenue,
+      monthAppointments,
+      todayAppointments,
+      todayPending,
+      monthCommissions: Number(monthCommissionsAgg._sum.amount || 0),
       totalClients,
       productsLowStock,
     };

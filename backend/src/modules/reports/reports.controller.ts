@@ -17,8 +17,13 @@ export class ReportsController {
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Admin dashboard stats' })
-  getDashboard() {
-    return this.reportsService.getAdminDashboard();
+  getDashboard(
+    @Query('professionalId') professionalId?: string,
+    @Query('serviceId') serviceId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportsService.getAdminDashboard({ professionalId, serviceId, startDate, endDate });
   }
 
   @Get('sales')

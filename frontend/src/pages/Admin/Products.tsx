@@ -17,6 +17,7 @@ const PRODUCT_TYPES = [
   { value: 'BARBERING', label: 'Barbearia' },
   { value: 'SKINCARE', label: 'Skincare' },
   { value: 'ACCESSORY', label: 'Acessório' },
+  { value: 'BEVERAGE', label: 'Bebida/Consumível' },
   { value: 'OTHER', label: 'Outro' },
 ]
 
@@ -70,7 +71,7 @@ export default function AdminProducts() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[#f5f5f5]">Produtos</h1>
           <p className="text-[#888888] mt-1">{products.length} produto(s) cadastrado(s)</p>
@@ -114,8 +115,8 @@ export default function AdminProducts() {
                   </td>
                   <td className="py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(prod)} className="p-1.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors"><Pencil size={15} /></button>
-                      <button onClick={() => setDeleteTarget(prod)} className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={15} /></button>
+                      <button onClick={() => openEdit(prod)} className="p-2.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors"><Pencil size={15} /></button>
+                      <button onClick={() => setDeleteTarget(prod)} className="p-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -127,7 +128,7 @@ export default function AdminProducts() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Produto' : 'Novo Produto'} size="lg">
         <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Nome *</label>
               <input {...register('name')} className="input" />
@@ -144,7 +145,7 @@ export default function AdminProducts() {
             <label className="label">Descrição</label>
             <textarea {...register('description')} className="input resize-none" rows={2} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Estoque Atual</label>
               <input {...register('stock')} type="number" min={0} className="input" />
@@ -154,7 +155,7 @@ export default function AdminProducts() {
               <input {...register('supplier')} className="input" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="label">Custo (R$)</label>
               <input {...register('cost')} type="number" min={0} step={0.01} className="input" />

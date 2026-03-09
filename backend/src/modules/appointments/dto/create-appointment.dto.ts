@@ -26,4 +26,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** Admin only: override the client to book for */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  clientId?: string;
 }

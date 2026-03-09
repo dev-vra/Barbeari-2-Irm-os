@@ -51,13 +51,9 @@ export class StripeService {
       expires_at: expiresAt,
     };
 
-    // PIX requires payment_intent_data with expiry
+    // PIX: expiry is handled via session expires_at (no extra params needed for Checkout)
     if (isPix) {
-      sessionParams.payment_intent_data = {
-        payment_method_options: {
-          pix: { expires_after_seconds: 3600 },
-        },
-      };
+      sessionParams.payment_intent_data = {};
     }
 
     const session = await this.stripe.checkout.sessions.create(sessionParams);

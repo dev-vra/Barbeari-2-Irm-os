@@ -31,13 +31,13 @@ export class ProfessionalsService {
         schedules: true,
       },
     });
-    if (!professional) throw new NotFoundException('Profissional não encontrado');
+    if (!professional) throw new NotFoundException('Profissional nï¿½o encontrado');
     return professional;
   }
 
   async update(id: string, dto: UpdateProfessionalDto) {
     const exists = await this.prisma.professional.findUnique({ where: { id } });
-    if (!exists) throw new NotFoundException('Profissional não encontrado');
+    if (!exists) throw new NotFoundException('Profissional nï¿½o encontrado');
     return this.prisma.professional.update({ where: { id }, data: dto as any });
   }
 
@@ -47,10 +47,11 @@ export class ProfessionalsService {
   }
 
   async assignService(id: string, dto: AssignServiceDto) {
+    const commissionPct = dto.commissionPct ?? 0;
     return this.prisma.professionalService.upsert({
       where: { professionalId_serviceId: { professionalId: id, serviceId: dto.serviceId } },
-      update: { commissionPct: dto.commissionPct },
-      create: { professionalId: id, serviceId: dto.serviceId, commissionPct: dto.commissionPct },
+      update: { commissionPct },
+      create: { professionalId: id, serviceId: dto.serviceId, commissionPct },
     });
   }
 
@@ -58,7 +59,7 @@ export class ProfessionalsService {
     await this.prisma.professionalService.delete({
       where: { professionalId_serviceId: { professionalId, serviceId } },
     });
-    return { message: 'Serviço removido do profissional' };
+    return { message: 'Serviï¿½o removido do profissional' };
   }
 
   async updateSchedule(professionalId: string, schedules: { dayOfWeek: number; startTime: string; endTime: string }[]) {

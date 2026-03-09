@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsNumber, Min, Max, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class AssignServiceDto {
@@ -8,10 +8,11 @@ export class AssignServiceDto {
   @IsNotEmpty()
   serviceId: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
   @Type(() => Number)
-  commissionPct: number;
+  commissionPct?: number;
 }

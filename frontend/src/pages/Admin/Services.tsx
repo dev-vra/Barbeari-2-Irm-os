@@ -56,7 +56,7 @@ export default function AdminServices() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[#f5f5f5]">Serviços</h1>
           <p className="text-[#888888] mt-1">{services.length} serviço(s) cadastrado(s)</p>
@@ -97,10 +97,10 @@ export default function AdminServices() {
                   </td>
                   <td className="py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(svc)} className="p-1.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors">
+                      <button onClick={() => openEdit(svc)} className="p-2.5 text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1f1f1f] rounded-lg transition-colors">
                         <Pencil size={15} />
                       </button>
-                      <button onClick={() => setDeleteTarget(svc)} className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                      <button onClick={() => setDeleteTarget(svc)} className="p-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                         <Trash2 size={15} />
                       </button>
                     </div>
@@ -123,7 +123,7 @@ export default function AdminServices() {
             <label className="label">Descrição</label>
             <textarea {...register('description')} className="input resize-none" rows={2} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Duração (min) *</label>
               <input {...register('durationMin')} type="number" min={5} step={5} className="input" />
