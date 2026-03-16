@@ -51,7 +51,7 @@ export default function Login() {
             </div>
             <div className="text-left">
               <div className="text-[#d4a853] font-black text-lg leading-none">BARBEARIA</div>
-              <div className="text-[#f5f5f5] font-black text-lg leading-none">DO GUSTAVO</div>
+              <div className="text-[#f5f5f5] font-black text-lg leading-none">PAI E FILHO</div>
             </div>
           </Link>
         </div>

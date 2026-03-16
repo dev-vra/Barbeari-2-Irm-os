@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import toast from 'react-hot-toast'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import api from '../../lib/api'
 import { formatCurrency } from '../../lib/utils'
 
@@ -97,19 +99,117 @@ export default function AdminReports() {
     }
     setDownloading(true)
     try {
-      const response = await api.get(selectedReport.endpoint, {
-        params: { startDate, endDate, format: 'pdf' },
-        responseType: 'blob',
+      const { data } = await api.get(selectedReport.endpoint, {
+        params: { startDate, endDate },
       })
-      const blob = new Blob([response.data], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${selectedReport.id}-${startDate}-${endDate}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+
+      const doc = new jsPDF()
+      const pageW = doc.internal.pageSize.getWidth()
+
+      // Header
+      doc.setFillColor(10, 10, 10)
+      doc.rect(0, 0, pageW, 40, 'F')
+      doc.setTextColor(212, 168, 83)
+      doc.setFontSize(18)
+      doc.text('BARBEARIA PAI E FILHO', pageW / 2, 18, { align: 'center' })
+      doc.setFontSize(11)
+      doc.setTextColor(200, 200, 200)
+      doc.text(`Relatório de ${selectedReport.label}`, pageW / 2, 28, { align: 'center' })
+      doc.setFontSize(9)
+      doc.setTextColor(150, 150, 150)
+      doc.text(`Período: ${startDate} a ${endDate}`, pageW / 2, 35, { align: 'center' })
+
+      let y = 50
+
+      // Summary stats (top-level scalar values)
+      const scalars = Object.entries(data).filter(([, v]) => typeof v !== 'object' || v === null)
+      if (scalars.length > 0) {
+        doc.setFontSize(12)
+        doc.setTextColor(40, 40, 40)
+        doc.text('Resumo', 14, y)
+        y += 8
+        doc.setFontSize(10)
+        for (const [key, value] of scalars) {
+          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim()
+          const val = typeof value === 'number'
+            ? (key.toLowerCase().includes('revenue') || key.toLowerCase().includes('total') || key.toLowerCase().includes('paid') || key.toLowerCase().includes('pending') || key.toLowerCase().includes('cost') || key.toLowerCase().includes('value') || key.toLowerCase().includes('commission'))
+              ? formatCurrency(value)
+              : String(value)
+            : String(value ?? '—')
+          doc.setTextColor(100, 100, 100)
+          doc.text(`${label}:`, 14, y)
+          doc.setTextColor(30, 30, 30)
+          doc.text(val, 80, y)
+          y += 7
+        }
+        y += 5
+      }
+
+      // Table data (array fields)
+      const arrays = Object.entries(data).filter(([, v]) => Array.isArray(v) && (v as any[]).length > 0)
+      for (const [key, arr] of arrays) {
+        const rows = arr as Record<string, any>[]
+        if (rows.length === 0) continue
+
+        // Flatten nested objects for display
+        const flatRows = rows.map(row => {
+          const flat: Record<string, any> = {}
+          for (const [k, v] of Object.entries(row)) {
+            if (v && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date)) {
+              if ('name' in v) flat[k] = (v as any).name
+              else if ('price' in v) flat[k] = formatCurrency(Number((v as any).price))
+              else continue
+            } else if (k === 'createdAt' || k === 'soldAt' || k === 'scheduledAt' || k === 'paidAt' || k === 'updatedAt') {
+              flat[k] = v ? format(new Date(v as string), 'dd/MM/yyyy HH:mm') : '—'
+            } else if (typeof v === 'number' || (typeof v === 'string' && !isNaN(Number(v)))) {
+              const num = Number(v)
+              if (k.toLowerCase().includes('price') || k.toLowerCase().includes('amount') || k.toLowerCase().includes('cost') || k.toLowerCase().includes('sale') || k === 'totalPrice') {
+                flat[k] = formatCurrency(num)
+              } else {
+                flat[k] = String(v)
+              }
+            } else if (typeof v !== 'object') {
+              flat[k] = String(v ?? '—')
+            }
+          }
+          return flat
+        })
+
+        const cols = Object.keys(flatRows[0] || {}).filter(c => c !== 'id' && !c.endsWith('Id'))
+        if (cols.length === 0) continue
+
+        const title = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim()
+        doc.setFontSize(12)
+        doc.setTextColor(40, 40, 40)
+        doc.text(title, 14, y)
+        y += 2
+
+        autoTable(doc, {
+          startY: y,
+          head: [cols.map(c => c.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim())],
+          body: flatRows.map(row => cols.map(c => row[c] ?? '—')),
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [212, 168, 83], textColor: [10, 10, 10], fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+          margin: { left: 14, right: 14 },
+        })
+
+        y = (doc as any).lastAutoTable.finalY + 10
+      }
+
+      // Footer
+      const pageCount = doc.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(150, 150, 150)
+        doc.text(
+          `Barbearia Pai e Filho — Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm')} — Página ${i}/${pageCount}`,
+          pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' }
+        )
+      }
+
+      doc.save(`${selectedReport.id}-${startDate}-${endDate}.pdf`)
       toast.success('PDF gerado com sucesso!')
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Erro ao gerar PDF')
@@ -123,12 +223,12 @@ export default function AdminReports() {
     refetchPreview()
   }
 
-  // Quick stats from sales report
+  // Quick stats from dashboard endpoint
   const { data: dashStats } = useQuery({
-    queryKey: ['report-sales-stats', startDate, endDate],
+    queryKey: ['report-dashboard-stats', startDate, endDate],
     queryFn: async () => {
-      const { data } = await api.get('/reports/sales', {
-        params: { startDate, endDate, format: 'json' },
+      const { data } = await api.get('/reports/dashboard', {
+        params: { startDate, endDate },
       })
       return data
     },
@@ -190,10 +290,10 @@ export default function AdminReports() {
       {dashStats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Faturamento', value: formatCurrency(dashStats.totalRevenue || 0), color: 'text-emerald-400' },
-            { label: 'Atendimentos', value: dashStats.totalAppointments ?? '—', color: 'text-blue-400' },
-            { label: 'Ticket Médio', value: formatCurrency(dashStats.averageTicket || 0), color: 'text-amber-400' },
-            { label: 'Comissões', value: formatCurrency(dashStats.totalCommissions || 0), color: 'text-rose-400' },
+            { label: 'Faturamento', value: formatCurrency(dashStats.monthRevenue || 0), color: 'text-emerald-400' },
+            { label: 'Atendimentos', value: dashStats.monthAppointments ?? '—', color: 'text-blue-400' },
+            { label: 'Ticket Médio', value: formatCurrency(dashStats.monthAppointments ? (dashStats.monthRevenue / dashStats.monthAppointments) : 0), color: 'text-amber-400' },
+            { label: 'Comissões', value: formatCurrency(dashStats.monthCommissions || 0), color: 'text-rose-400' },
           ].map(({ label, value, color }) => (
             <div key={label} className="card">
               <p className="text-[#555555] text-xs uppercase tracking-wider mb-1">{label}</p>

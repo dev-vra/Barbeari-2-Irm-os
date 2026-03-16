@@ -23,6 +23,7 @@ async function bootstrap() {
         origin.endsWith('.railway.app') ||
         origin.endsWith('.railway.com') ||
         origin === 'https://railway.com' ||
+        origin.endsWith('.onrender.com') ||
         origin.endsWith('.vercel.app') ||
         origin === 'http://localhost:5173' ||
         origin === 'http://localhost:4173';
@@ -44,7 +45,7 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Barbearia do Gustavo - API')
+      .setTitle('Barbearia Pai e Filho - API')
       .setDescription('Sistema de gestão de barbearia')
       .setVersion('1.0')
       .addBearerAuth()

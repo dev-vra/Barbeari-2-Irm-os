@@ -128,7 +128,7 @@ export default function ClientLayout() {
             <div className="p-1 bg-[#d4a853] rounded-md">
               <Scissors size={14} className="text-[#0a0a0a]" />
             </div>
-            <span className="text-[#f5f5f5] font-bold text-sm tracking-wide">Barbearia 2 Irmãos</span>
+            <span className="text-[#f5f5f5] font-bold text-sm tracking-wide">Barbearia Pai e Filho</span>
           </div>
         </header>
 

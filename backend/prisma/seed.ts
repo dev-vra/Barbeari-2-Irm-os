@@ -1,9 +1,10 @@
 import { PrismaClient, Role, ProductType, AppointmentStatus, PaymentMethod, PaymentStatus, CommissionType } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
 import 'dotenv/config';
 
-// Standard PrismaClient — reads URL from prisma.config.ts (no adapter needed in Node.js)
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -55,11 +56,11 @@ function slotsFor(durationMin: number): string[] {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🌱 Seeding Barbearia 2 Irmãos...\n');
+  console.log('🌱 Seeding Barbearia Pai e Filho...\n');
 
   // ── Guard: skip if already seeded ────────────────────────────────────────
   const existing = await prisma.user.findUnique({
-    where: { email: 'admin@barbearia2irmaos.com' },
+    where: { email: 'admin@barbeariapaefilho.com' },
   });
   if (existing) {
     console.log('⏭️  Banco já possui dados (admin encontrado). Seed ignorado.\n');
@@ -68,12 +69,12 @@ async function main() {
 
   // ── Admin ────────────────────────────────────────────────────────────────
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@barbearia2irmaos.com' },
+    where: { email: 'admin@barbeariapaefilho.com' },
     update: {},
     create: {
       name: 'Admin Barbearia',
       cpf: '00000000001',
-      email: 'admin@barbearia2irmaos.com',
+      email: 'admin@barbeariapaefilho.com',
       passwordHash: await bcrypt.hash('admin123', 10),
       role: Role.ADMIN,
       phone: '65981143182',
@@ -106,11 +107,12 @@ async function main() {
 
   const gabriel = await prisma.professional.upsert({
     where: { id: 'prof-gabriel' },
-    update: { name: 'Gabriel Souza', description: 'Sócio fundador. Especialista em cortes clássicos e modernos com 12 anos de experiência.' },
+    update: { name: 'Gabriel Souza', description: 'Sócio fundador. Especialista em cortes clássicos e modernos com 12 anos de experiência.', photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face' },
     create: {
       id: 'prof-gabriel',
       name: 'Gabriel Souza',
       description: 'Sócio fundador. Especialista em cortes clássicos e modernos com 12 anos de experiência.',
+      photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
       serviceCommissionPct: 50,
       productCommissionPct: 20,
       schedules: {
@@ -121,11 +123,12 @@ async function main() {
 
   const rafael = await prisma.professional.upsert({
     where: { id: 'prof-rafael' },
-    update: { name: 'Rafael Souza', description: 'Sócio. Especialista em barba, degradê e pigmentação. Referência em estilo urbano.' },
+    update: { name: 'Rafael Souza', description: 'Sócio. Especialista em barba, degradê e pigmentação. Referência em estilo urbano.', photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face' },
     create: {
       id: 'prof-rafael',
       name: 'Rafael Souza',
       description: 'Sócio. Especialista em barba, degradê e pigmentação. Referência em estilo urbano.',
+      photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face',
       serviceCommissionPct: 45,
       productCommissionPct: 15,
       schedules: {
@@ -136,11 +139,12 @@ async function main() {
 
   const eduardo = await prisma.professional.upsert({
     where: { id: 'prof-eduardo' },
-    update: { name: 'Eduardo Lima', description: 'Barbeiro com talento para cortes criativos e tratamentos capilares.' },
+    update: { name: 'Eduardo Lima', description: 'Barbeiro com talento para cortes criativos e tratamentos capilares.', photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face' },
     create: {
       id: 'prof-eduardo',
       name: 'Eduardo Lima',
       description: 'Barbeiro com talento para cortes criativos e tratamentos capilares.',
+      photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face',
       serviceCommissionPct: 40,
       productCommissionPct: 15,
       schedules: {
@@ -419,7 +423,7 @@ async function main() {
 
   console.log('\n✅ Seed completed!\n');
   console.log('─'.repeat(50));
-  console.log('🔑 Admin:  admin@barbearia2irmaos.com / admin123');
+  console.log('🔑 Admin:  admin@barbeariapaefilho.com / admin123');
   console.log('🔑 Client: cliente@exemplo.com / cliente123');
   console.log('─'.repeat(50));
 }

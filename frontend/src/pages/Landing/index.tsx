@@ -96,7 +96,7 @@ export default function LandingPage() {
               </div>
               <div className="leading-tight">
                 <div className="text-[#d4a853] font-bold text-sm tracking-widest">BARBEARIA</div>
-                <div className="text-[#f5f5f5] font-bold text-sm -mt-0.5 tracking-widest">2 IRMÃOS</div>
+                <div className="text-[#f5f5f5] font-bold text-sm -mt-0.5 tracking-widest">PAI E FILHO</div>
               </div>
             </a>
             <nav className="hidden md:flex items-center gap-1">
@@ -193,7 +193,7 @@ export default function LandingPage() {
               transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
               className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-[#d4a853] leading-none"
             >
-              2 IRMÃOS
+              PAI E FILHO
             </motion.div>
           </div>
 
@@ -357,7 +357,7 @@ export default function LandingPage() {
                   <div className="relative mx-auto mb-5 w-24 h-24">
                     {prof.photoUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || ''}/api/upload/files/${prof.photoUrl.split('/').pop()}`}
+                        src={prof.photoUrl.startsWith('http') ? prof.photoUrl : `${import.meta.env.VITE_API_URL?.replace('/api', '') || ''}/api/upload/files/${prof.photoUrl.split('/').pop()}`}
                         alt={prof.name}
                         className="w-24 h-24 rounded-full object-cover border-2 border-[#d4a853]/30 group-hover:border-[#d4a853] group-hover:scale-105 transition-all duration-300"
                       />
@@ -439,7 +439,7 @@ export default function LandingPage() {
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.1!2d-56.0876!3d-15.5989!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x939db1b7a7c2f65b%3A0x1!2sAv.%20Joaquim%20Louzada%2C%206%20-%20Novo%20Colorado%2C%20Cuiab%C3%A1%20-%20MT!5e0!3m2!1spt-BR!2sbr!4v1700000000000!5m2!1spt-BR!2sbr"
                 width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade" title="Barbearia 2 Irmãos - Localização"
+                referrerPolicy="no-referrer-when-downgrade" title="Barbearia Pai e Filho - Localização"
               />
             </motion.div>
           </div>
@@ -454,11 +454,11 @@ export default function LandingPage() {
               <Scissors size={16} className="text-[#0a0a0a]" />
             </div>
             <div>
-              <div className="text-[#d4a853] font-bold text-xs tracking-widest">BARBEARIA 2 IRMÃOS</div>
+              <div className="text-[#d4a853] font-bold text-xs tracking-widest">BARBEARIA PAI E FILHO</div>
               <div className="text-[#555555] text-xs">Cuiabá - MT</div>
             </div>
           </div>
-          <p className="text-[#555555] text-sm">© {new Date().getFullYear()} Barbearia 2 Irmãos. Todos os direitos reservados.</p>
+          <p className="text-[#555555] text-sm">© {new Date().getFullYear()} Barbearia Pai e Filho. Todos os direitos reservados.</p>
           <div className="flex gap-4">
             <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
               className="p-2 text-[#555555] hover:text-[#d4a853] hover:bg-[#d4a853]/10 rounded-lg transition-all">

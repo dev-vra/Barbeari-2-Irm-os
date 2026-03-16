@@ -33,7 +33,7 @@ export default function ClientDashboard() {
         <h1 className="text-2xl font-bold text-[#f5f5f5]">
           Olá, {user?.name?.split(' ')[0]} 👋
         </h1>
-        <p className="text-[#888888] mt-1">Bem-vindo à Barbearia do Gustavo</p>
+        <p className="text-[#888888] mt-1">Bem-vindo à Barbearia Pai e Filho</p>
       </div>
 
       {/* Stats */}

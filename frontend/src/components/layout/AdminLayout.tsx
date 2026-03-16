@@ -59,7 +59,7 @@ export default function AdminLayout() {
           </div>
           <div className="leading-tight">
             <div className="text-[#d4a853] font-bold text-xs tracking-widest">BARBEARIA</div>
-            <div className="text-[#f5f5f5] font-bold text-xs tracking-widest">2 IRMÃOS</div>
+            <div className="text-[#f5f5f5] font-bold text-xs tracking-widest">PAI E FILHO</div>
           </div>
         </div>
         <span className="text-[#444444] text-xs">Painel Administrativo</span>
@@ -159,7 +159,7 @@ export default function AdminLayout() {
             <div className="p-1 bg-[#d4a853] rounded-md">
               <Scissors size={14} className="text-[#0a0a0a]" />
             </div>
-            <span className="text-[#f5f5f5] font-bold text-sm tracking-wide">2 Irmãos Admin</span>
+            <span className="text-[#f5f5f5] font-bold text-sm tracking-wide">Pai e Filho Admin</span>
           </div>
         </header>
 

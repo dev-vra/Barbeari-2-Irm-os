@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, CreditCard, Smartphone } from 'lucide-react'
+import { Scissors, Clock, ChevronRight, ChevronLeft, Check, CalendarCheck, CreditCard, Smartphone, X, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../../lib/api'
 import { formatCurrency } from '../../../lib/utils'
@@ -192,8 +192,84 @@ function StepSlot({ booking, onSelect, onBack }: {
 }
 
 // ── Step 4: Success ────────────────────────────────────────────────────────
+function PixQRModal({ amount, onClose }: { amount: string; onClose: () => void }) {
+  const pixKey = '00020126580014br.gov.bcb.pix0136aabbccdd-1234-5678-9012-abcdefabcdef5204000053039865802BR5925BARBEARIA PAI E FILHO6006CUIABA62070503***6304'
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(pixKey)
+    setCopied(true)
+    toast.success('Código PIX copiado!')
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-6 max-w-sm w-full relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[#1f1f1f] transition-colors">
+          <X size={18} className="text-[#888888]" />
+        </button>
+
+        <div className="text-center mb-4">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#00b4d8]/10 flex items-center justify-center">
+            <Smartphone size={24} className="text-[#00b4d8]" />
+          </div>
+          <h3 className="text-[#f5f5f5] font-bold text-lg">Pagamento PIX</h3>
+          <p className="text-[#888888] text-sm">Escaneie o QR Code ou copie o código</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 mx-auto w-fit mb-4">
+          <svg viewBox="0 0 256 256" width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+            {/* Generic QR code pattern */}
+            <rect width="256" height="256" fill="white"/>
+            {/* Position detection patterns (corners) */}
+            <rect x="8" y="8" width="56" height="56" fill="black"/>
+            <rect x="16" y="16" width="40" height="40" fill="white"/>
+            <rect x="24" y="24" width="24" height="24" fill="black"/>
+            <rect x="192" y="8" width="56" height="56" fill="black"/>
+            <rect x="200" y="16" width="40" height="40" fill="white"/>
+            <rect x="208" y="24" width="24" height="24" fill="black"/>
+            <rect x="8" y="192" width="56" height="56" fill="black"/>
+            <rect x="16" y="200" width="40" height="40" fill="white"/>
+            <rect x="24" y="208" width="24" height="24" fill="black"/>
+            {/* Data modules (random-looking pattern) */}
+            {[72,80,88,96,104,112,120,128,136,144,152,160,168,176].map(x =>
+              [8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,200,208,216,224,232,240].map(y => {
+                const show = ((x * 7 + y * 13 + 37) % 3) !== 0
+                if (!show) return null
+                if (x < 72 && y < 72) return null
+                if (x > 184 && y < 72) return null
+                if (x < 72 && y > 184) return null
+                return <rect key={`${x}-${y}`} x={x} y={y} width="8" height="8" fill="black"/>
+              })
+            )}
+          </svg>
+        </div>
+
+        <div className="text-center mb-4">
+          <p className="text-[#d4a853] font-bold text-2xl">{amount}</p>
+          <p className="text-[#555555] text-xs mt-1">Valor do serviço</p>
+        </div>
+
+        <button onClick={handleCopy}
+          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-[#1f1f1f] bg-[#0a0a0a] hover:border-[#00b4d8]/50 transition-all text-sm">
+          <Copy size={16} className={copied ? 'text-green-500' : 'text-[#00b4d8]'} />
+          <span className={copied ? 'text-green-500 font-medium' : 'text-[#f5f5f5]'}>
+            {copied ? 'Copiado!' : 'Copiar código PIX'}
+          </span>
+        </button>
+
+        <p className="text-[#444444] text-xs text-center mt-3">
+          Após o pagamento, a confirmação é automática
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function StepSuccess({ booking }: { booking: BookingState }) {
   const navigate = useNavigate()
+  const [showPixQR, setShowPixQR] = useState(false)
 
   const payMutation = useMutation({
     mutationFn: async (paymentMethod: 'card' | 'pix') => {
@@ -252,7 +328,7 @@ function StepSuccess({ booking }: { booking: BookingState }) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         {/* PIX */}
         <button
-          onClick={() => payMutation.mutate('pix')}
+          onClick={() => setShowPixQR(true)}
           disabled={isPending}
           className="flex flex-col items-center gap-2 p-4 rounded-xl border border-[#1f1f1f]
             bg-[#111111] hover:border-[#d4a853]/50 hover:bg-[#1a1a1a]
@@ -303,6 +379,13 @@ function StepSuccess({ booking }: { booking: BookingState }) {
         className="btn-ghost w-full text-sm">
         Voltar ao início
       </button>
+
+      {showPixQR && (
+        <PixQRModal
+          amount={formatCurrency(booking.service?.price)}
+          onClose={() => setShowPixQR(false)}
+        />
+      )}
     </div>
   )
 }

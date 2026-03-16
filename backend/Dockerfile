@@ -23,6 +23,6 @@ COPY prisma.config.ts ./
 
 ENV NODE_ENV=production
 
-EXPOSE 3005
+EXPOSE ${PORT:-3005}
 
 CMD ["node", "dist/main"]
